@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: backend-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword  # root password for MySQL
+      MYSQL_DATABASE: db               # default database
+      MYSQL_USER: user                   # user
+      MYSQL_PASSWORD: pass               # Pass
+    ports:
+      - "3306:3306"  # MySQL port
+    volumes:
+      - mysql-data:/var/lib/mysql  # for data persistence
+
+  backend:
+    image: amineromdhani/dorm-management # this is an example public image (pulls latest image by default
+    container_name: backend-app
+    environment:
+      SPRING_PROFILES_ACTIVE: k8s
+      DATABASE_URL: mysql
+      DATABASE_USER: user
+      DATABASE_PASS: pass
+    ports:
+      - "8089:8089"  # expose the backend app's port
+    depends_on:
+      - mysql  # ensure the backend waits for MySQL to be ready
+    command: >
+      sh -c "
+        until nc -z mysql 3306;
+        do echo waiting for MySQL...;
+        sleep 2;
+        done;
+        java -jar /path/to/your/backend.jar"  # Replace with actual command to start the backend
+
+volumes:
+  mysql-data:
+    driver: local
